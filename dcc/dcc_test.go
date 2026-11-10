@@ -1,10 +1,14 @@
 package dcc
 
 import (
+	"bytes"
+	"io"
+	"net"
+	"strconv"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"net"
-	"testing"
 )
 
 // TestStringParsing makes sure that data is properly extracted from the DCC
@@ -62,4 +66,57 @@ func TestIpConversion(t *testing.T) {
 	if download.String() != dccStr {
 		t.Errorf("invalid String() got: %s expected %s", download.String(), dccStr)
 	}
+}
+
+// A DCC SEND names an address chosen by the sender. When nothing is listening
+// there, the transfer has to fail with an error that names the address, rather
+// than blocking as it did before DialTimeout was introduced.
+func TestDownloadUnreachableAddressFails(t *testing.T) {
+	// Taking a listener and closing it leaves a port nothing is bound to.
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	address := listener.Addr().String()
+	require.NoError(t, listener.Close())
+
+	host, port, err := net.SplitHostPort(address)
+	require.NoError(t, err)
+	portNum, err := strconv.Atoi(port)
+	require.NoError(t, err)
+
+	download := New("unreachable.zip", net.ParseIP(host).To4(), portNum, 1024)
+
+	err = download.Download(io.Discard)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), address)
+}
+
+// A sender that hangs up part way through must surface an error that says how
+// far the transfer got, not report success or hang.
+func TestDownloadTruncatedTransferFails(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	defer listener.Close()
+
+	go func() {
+		conn, err := listener.Accept()
+		if err != nil {
+			return
+		}
+		conn.Write([]byte("partial"))
+		conn.Close()
+	}()
+
+	host, port, err := net.SplitHostPort(listener.Addr().String())
+	require.NoError(t, err)
+	portNum, err := strconv.Atoi(port)
+	require.NoError(t, err)
+
+	// Claim a size far larger than what the listener sends.
+	download := New("truncated.zip", net.ParseIP(host).To4(), portNum, 4096)
+
+	var sink bytes.Buffer
+	err = download.Download(&sink)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "of 4096 bytes")
+	assert.Equal(t, "partial", sink.String())
 }

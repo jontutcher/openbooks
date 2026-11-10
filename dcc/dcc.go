@@ -8,6 +8,22 @@ import (
 	"net"
 	"regexp"
 	"strconv"
+	"time"
+)
+
+const (
+	// DialTimeout bounds the wait for the sender to accept our connection. A
+	// DCC SEND only tells us an address to dial, and that address is often a
+	// residential machine that has since gone away or sits behind something
+	// that blackholes the traffic. A bare net.Dial would then wait for the
+	// operating system default, which is minutes, with nothing logged.
+	DialTimeout = 30 * time.Second
+
+	// IdleTimeout bounds the wait for each individual read. The transfer size
+	// is known up front and the sender never closes the stream cleanly, so the
+	// read loop below cannot use EOF to decide it is finished; without a
+	// deadline a sender that stops mid-file blocks the transfer forever.
+	IdleTimeout = 60 * time.Second
 )
 
 const delimiterChar = string(byte(0x01))
@@ -73,10 +89,11 @@ func ParseString(text string) (*Download, error) {
 // Download writes the data contained in the DCC Download
 // See https://en.wikipedia.org/wiki/Direct_Client-to-Client#DCC_SEND
 func (download Download) Download(writer io.Writer) error {
-	// TODO: Maybe specify deadline?
-	conn, err := net.Dial("tcp", net.JoinHostPort(download.IP.String(), strconv.Itoa(download.Port)))
+	address := net.JoinHostPort(download.IP.String(), strconv.Itoa(download.Port))
+
+	conn, err := net.DialTimeout("tcp", address, DialTimeout)
 	if err != nil {
-		return err
+		return fmt.Errorf("dcc: connecting to %s: %w", address, err)
 	}
 	defer conn.Close()
 
@@ -94,9 +111,13 @@ func (download Download) Download(writer io.Writer) error {
 	var received int64
 	bytes := make([]byte, 4096)
 	for received < download.Size {
+		if err := conn.SetReadDeadline(time.Now().Add(IdleTimeout)); err != nil {
+			return fmt.Errorf("dcc: setting read deadline for %s: %w", address, err)
+		}
+
 		n, err := conn.Read(bytes)
 		if err != nil {
-			return err
+			return fmt.Errorf("dcc: reading from %s after %d of %d bytes: %w", address, received, download.Size, err)
 		}
 
 		_, err = writer.Write(bytes[:n])
