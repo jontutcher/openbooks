@@ -10,7 +10,7 @@
 
 ### Persist eBook Files
 
-`docker run -d -p 8080 -v ~/Downloads:/books evanbuss/openbooks --name my_irc_name --persist`
+`docker run -d -p 8080:80 -v ~/Downloads:/books evanbuss/openbooks --name my_irc_name --persist`
 
 ### Host at a sub path behind a reverse proxy
 
@@ -27,8 +27,7 @@
 
 ## Docker Compose
 
-```docker
-version: '3.3'
+```yaml
 services:
     openbooks:
         ports:

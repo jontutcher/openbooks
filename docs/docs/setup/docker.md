@@ -8,7 +8,6 @@ The OpenBooks docker image allows you to run server mode. A multi-platform Docke
 For advanced configuration, I recommend using Docker Compose to keep track of container setup.
 
 ```yaml title="docker-compose.yml"
-version: "3.3"
 services:
   openbooks:
     container_name: OpenBooks
@@ -17,11 +16,13 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - "~/Downoads/openbooks:/books"
-    command: --persist --name
+      - "~/Downloads/openbooks:/books"
+    command: --persist --name my_irc_name
     environment:
       - BASE_PATH=/openbooks/
 ```
+
+`--name` is required: the container exits immediately without it.
 
 ## Configuration
 
