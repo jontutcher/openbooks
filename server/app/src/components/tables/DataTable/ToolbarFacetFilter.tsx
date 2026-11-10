@@ -106,7 +106,7 @@ export default function ToolbarFacetFilter<TData extends RowData>({
       </Popover.Target>
       <Popover.Dropdown>
         <Group justify="space-between" className={classes.header}>
-          <Text fw="normal" size="xs" c="dark">
+          <Text fw="normal" size="xs">
             Filter {placeholder}
           </Text>
           <CloseButton

@@ -149,12 +149,7 @@ export default function DataTable<TData extends RowData>({
                               ? "auto"
                               : cell.column.getSize()
                         }}>
-                        <Text
-                          fz="xs"
-                          component="div"
-                          pl="xl"
-                          lineClamp={1}
-                          c="dark">
+                        <Text fz="xs" component="div" pl="xl" lineClamp={1}>
                           {flexRender(
                             cell.column.columnDef.cell,
                             cell.getContext()

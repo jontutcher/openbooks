@@ -23,7 +23,7 @@ export function ServerFacetEntry({
       onClick={() => onClick(entry)}>
       <div className={cx({ [classes.indicator]: selected })}></div>
 
-      <Text span fz={12} fw="normal" c="dark" style={{ marginLeft: 20 }}>
+      <Text span fz={12} fw="normal" style={{ marginLeft: 20 }}>
         <Indicator
           position="middle-start"
           offset={-16}
@@ -50,7 +50,7 @@ export function StandardFacetEntry({
       onClick={() => onClick(entry)}>
       <div className={cx({ [classes.indicator]: selected })}></div>
 
-      <Text fz={12} fw="normal" c="dark">
+      <Text fz={12} fw="normal">
         {entry}
       </Text>
     </Button>

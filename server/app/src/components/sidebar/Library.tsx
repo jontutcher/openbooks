@@ -78,7 +78,7 @@ function LibraryCard({ book }: LibraryCardProps) {
             fullWidth
             leftSection={<BookIcon weight="bold" size={18} />}
             rightSection={
-              <Badge color="brand" radius="sm" size="sm" variant="light">
+              <Badge color="blue" radius="sm" size="sm" variant="light">
                 {new Date(book.time).toLocaleDateString("en-US")}
               </Badge>
             }>

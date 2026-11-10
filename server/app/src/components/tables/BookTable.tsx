@@ -68,7 +68,7 @@ export default function BookTable({ books }: BookTableProps) {
           ),
           cell: (props) => (
             <Tooltip label={props.getValue()} position="bottom-start">
-              <Text fz={12} fw="normal" c="dark">
+              <Text fz={12} fw="normal">
                 {props.getValue()}
               </Text>
             </Tooltip>
