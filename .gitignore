@@ -1,5 +1,6 @@
 # start persist
 mock_server
+cmd/mock/mock
 openbooks
 !openbooks/
 *.DS_Store

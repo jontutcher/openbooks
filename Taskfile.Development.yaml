@@ -6,7 +6,7 @@ tasks:
   go-update:
     desc: Update Golang dependencies.
     cmds:
-      - go get -u ./..
+      - go get -u ./...
       - go mod tidy
 
   npm-update:
@@ -60,4 +60,4 @@ tasks:
     desc: Run OpenBooks in the experimental desktop mode with a WebView GUI.
     dir: cmd/openbooks
     cmds:
-      - go run -tags webview
+      - go run -tags webview .
