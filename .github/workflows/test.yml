@@ -1,0 +1,68 @@
+name: Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - development
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Lint and Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: server/app/package-lock.json
+
+      - name: Install client dependencies
+        run: npm ci
+        working-directory: server/app
+
+      - name: Lint client
+        run: npm run lint
+        working-directory: server/app
+
+      # The server embeds server/app/dist, so the client has to be built before
+      # anything under ./server will compile. This also type checks the client,
+      # because "npm run build" runs tsc first.
+      - name: Build client
+        run: npm run build
+        working-directory: server/app
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.26"
+          cache-dependency-path: go.sum
+
+      # eslint's dependency tree contains a Go package (flatted), which "./..."
+      # would otherwise pick up out of node_modules.
+      - name: Resolve Go packages
+        run: echo "PACKAGES=$(go list ./... | grep -v /node_modules/ | tr '\n' ' ')" >> "$GITHUB_ENV"
+
+      - name: Check formatting
+        run: |
+          unformatted=$(gofmt -l $(go list -f '{{.Dir}}' $PACKAGES))
+          if [ -n "$unformatted" ]; then
+            echo "These files need gofmt:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet $PACKAGES
+
+      - name: Test
+        run: go test -race $PACKAGES

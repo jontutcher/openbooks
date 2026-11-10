@@ -74,7 +74,7 @@ func ParseString(text string) (*Download, error) {
 // See https://en.wikipedia.org/wiki/Direct_Client-to-Client#DCC_SEND
 func (download Download) Download(writer io.Writer) error {
 	// TODO: Maybe specify deadline?
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", download.IP, download.Port))
+	conn, err := net.Dial("tcp", net.JoinHostPort(download.IP.String(), strconv.Itoa(download.Port)))
 	if err != nil {
 		return err
 	}
