@@ -13,9 +13,12 @@ import (
 )
 
 type Config struct {
-	Server           string
+	// Server is the address of the IRC server to connect to, as host:port.
+	Server string
+	// SearchResultPath is the archive served in reply to an @search request.
 	SearchResultPath string
-	BookResultPath   string
+	// BookResultPath is the file served in reply to a book download request.
+	BookResultPath string
 }
 
 // Operator listens to an IRC channel and responds to search / download requests
@@ -65,25 +68,34 @@ func (o *Operator) Handler(client *irc.Client, message *irc.Message) {
 		}
 		o.log.Printf("Search for '%s'\n", queryParts[1])
 
-		dccString := o.dccManager.ServeFile("SearchBot_results_for_ the great gatsby.txt.zip")
+		dccString, err := o.dccManager.ServeFile(o.config.SearchResultPath)
+		if err != nil {
+			o.log.Printf("Unable to serve %q: %v\n", o.config.SearchResultPath, err)
+			return
+		}
 
 		time.Sleep(time.Second * time.Duration(rand.Intn(5)))
-		err := client.Writef(`:search PRIVMSG %s :%s`, message.Name, dccString)
-		if err != nil {
-			log.Println(err)
+		if err = client.Writef(`:search PRIVMSG %s :%s`, message.Name, dccString); err != nil {
+			o.log.Println(err)
 		}
 	}
 
 	if strings.HasPrefix(message.Trailing(), "!") {
-		query := strings.SplitN(message.Trailing(), " ", 2)[1]
-		o.log.Printf("Download request for '%s'\n", query)
+		queryParts := strings.SplitN(message.Trailing(), " ", 2)
+		if len(queryParts) == 1 {
+			return
+		}
+		o.log.Printf("Download request for '%s'\n", queryParts[1])
 
-		dccString := o.dccManager.ServeFile("ebook.epub")
+		dccString, err := o.dccManager.ServeFile(o.config.BookResultPath)
+		if err != nil {
+			o.log.Printf("Unable to serve %q: %v\n", o.config.BookResultPath, err)
+			return
+		}
 
 		time.Sleep(time.Second * time.Duration(rand.Intn(5)))
-		err := client.Writef(`:search PRIVMSG %s :%s`, message.Name, dccString)
-		if err != nil {
-			log.Println(err)
+		if err = client.Writef(`:search PRIVMSG %s :%s`, message.Name, dccString); err != nil {
+			o.log.Println(err)
 		}
 	}
 }

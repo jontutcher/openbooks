@@ -2,7 +2,6 @@ package mock
 
 import (
 	"github.com/evan-buss/openbooks/dcc"
-	"log"
 	"net"
 	"os"
 	"path/filepath"
@@ -14,18 +13,17 @@ func NewDccManager() *DccManager {
 	return &DccManager{}
 }
 
-func (d *DccManager) ServeFile(path string) string {
+// ServeFile starts a one-shot DCC server for path and returns the DCC SEND
+// string a client needs in order to download it.
+func (d *DccManager) ServeFile(path string) (string, error) {
 	file, err := os.Stat(path)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
 	server := NewDccServer(path)
 	selectedPortChan := make(chan int)
 	go server.Start(selectedPortChan)
-	log.Println(file.Size())
 
-	dccString := dcc.New(filepath.Base(path), net.ParseIP("127.0.0.1").To4(), <-selectedPortChan, file.Size()).String()
-	println(dccString)
-	return dccString
+	return dcc.New(filepath.Base(path), net.ParseIP("127.0.0.1").To4(), <-selectedPortChan, file.Size()).String(), nil
 }
