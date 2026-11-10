@@ -65,6 +65,12 @@ type ConnectionResponse struct {
 // SearchResponse is a response that is sent containing BookDetails objects that matched the query
 type SearchResponse struct {
 	StatusResponse
+	// Query is the search these results answer, recovered from the name of
+	// the file the bot sent. The client holds several searches at once and
+	// results can arrive in any order, or for a search a previous page load
+	// made, so it needs to know which one these belong to. Empty when the
+	// file name did not reveal it.
+	Query  string            `json:"query,omitempty"`
 	Books  []core.BookDetail `json:"books"`
 	Errors []core.ParseError `json:"errors"`
 }
@@ -91,7 +97,7 @@ func newRateLimitResponse(remainingSeconds float64) StatusResponse {
 	}
 }
 
-func newSearchResponse(results []core.BookDetail, errors []core.ParseError) SearchResponse {
+func newSearchResponse(results []core.BookDetail, errors []core.ParseError, query string) SearchResponse {
 	detail := fmt.Sprintf("There were %v parsing errors.", len(errors))
 	if len(errors) == 1 {
 		detail = "There was 1 parsing error."
@@ -103,6 +109,7 @@ func newSearchResponse(results []core.BookDetail, errors []core.ParseError) Sear
 			Title:            fmt.Sprintf("%v Search Results Received", len(results)),
 			Detail:           detail,
 		},
+		Query:  query,
 		Books:  results,
 		Errors: errors,
 	}

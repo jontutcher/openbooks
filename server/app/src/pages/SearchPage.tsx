@@ -80,7 +80,6 @@ export default function SearchPage() {
           <TextInput
             w="100%"
             variant="filled"
-            disabled={activeItem && !activeItem.results}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={

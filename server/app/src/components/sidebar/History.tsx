@@ -12,6 +12,7 @@ import {
 import { Eye, EyeSlash, MagnifyingGlass, Trash } from "@phosphor-icons/react";
 import {
   HistoryItem,
+  isPending,
   removeResults,
   setActiveItem
 } from "../../state/historySlice";
@@ -55,7 +56,28 @@ type Props = {
 
 function HistoryCard({ activeTS, item, dispatch }: Props) {
   const isActive = activeTS === item.timestamp;
-  const loading = !item.results?.length && !item.errors?.length;
+
+  const status = () => {
+    if (isPending(item)) {
+      return <Loader color="blue" size="xs" />;
+    }
+
+    // No results arrived and none can now; the query is still there to run
+    // again, and the menu can delete it.
+    if (item.failed) {
+      return (
+        <Badge color="red" radius="sm" size="sm" variant="light">
+          FAILED
+        </Badge>
+      );
+    }
+
+    return (
+      <Badge color="blue" radius="sm" size="sm" variant="light">
+        {`${item.results?.length ?? 0} RESULTS`}
+      </Badge>
+    );
+  };
 
   return (
     <Menu shadow="md">
@@ -73,15 +95,7 @@ function HistoryCard({ activeTS, item, dispatch }: Props) {
             variant="outline"
             fullWidth
             leftSection={<MagnifyingGlass size={18} weight="bold" />}
-            rightSection={
-              loading ? (
-                <Loader color="blue" size="xs" />
-              ) : (
-                <Badge color="blue" radius="sm" size="sm" variant="light">
-                  {`${item.results?.length} RESULTS`}
-                </Badge>
-              )
-            }>
+            rightSection={status()}>
             {item.query}
           </Button>
         </Tooltip>

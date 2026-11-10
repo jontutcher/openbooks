@@ -33,6 +33,8 @@ export interface ConnectionResponse extends Response {
 
 // SearchResponse is received after search results are received and parsed.
 export interface SearchResponse extends Response {
+  // The search these results answer. Absent from a server too old to send it.
+  query?: string;
   books: BookDetail[];
   errors: ParseError[];
 }

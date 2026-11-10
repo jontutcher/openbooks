@@ -53,8 +53,10 @@ func (s *server) searchResultHandler(downloadDir string) core.HandlerFunc {
 			}
 		}
 
-		s.log.Printf("Sending %d search results.\n", len(bookResults))
-		s.send <- newSearchResponse(bookResults, parseErrors)
+		query := queryFromResultsFilename(extractedPath)
+
+		s.log.Printf("Sending %d search results for %q.\n", len(bookResults), query)
+		s.send <- newSearchResponse(bookResults, parseErrors, query)
 
 		err = os.Remove(extractedPath)
 		if err != nil {

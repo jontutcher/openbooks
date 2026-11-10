@@ -6,6 +6,7 @@ import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 import { api } from "./api";
 import historyReducer from "./historySlice";
 import notificationReducer from "./notificationSlice";
+import { searchTimeoutMiddleware } from "./searchTimeout";
 import { sseMiddleware } from "./sseMiddleware";
 import stateReducer from "./stateSlice";
 import { getApiURL } from "./util";
@@ -22,6 +23,7 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
       sseMiddleware(getApiURL().href + "events"),
+      searchTimeoutMiddleware,
       api.middleware
     )
 });
