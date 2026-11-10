@@ -22,12 +22,16 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v5
         
+      # linux/arm (32-bit armv7) is no longer built: the Chainguard images the
+      # Dockerfile is based on publish linux/amd64 and linux/arm64 only, so a
+      # 32-bit build cannot resolve a base image. 64-bit Raspberry Pi OS is
+      # covered by linux/arm64.
       - name: Set Docker Platforms For Branch
         run: |
           if [[ $GITHUB_REF == 'refs/heads/development' ]]; then
               echo "DOCKER_PLATFORMS=linux/amd64" >> "$GITHUB_ENV"
           else
-              echo "DOCKER_PLATFORMS=linux/amd64,linux/arm64,linux/arm" >> "$GITHUB_ENV"
+              echo "DOCKER_PLATFORMS=linux/amd64,linux/arm64" >> "$GITHUB_ENV"
           fi
 
       - name: Set Docker Metadata

@@ -17,6 +17,12 @@
 - Replaced the archived `mholt/archiver/v3` with `mholt/archives`, and `webview/webview` with `webview/webview_go`.
 - Updated the client to React 19, Mantine 9, TanStack Table 9, Redux Toolkit 2, Vite 8 and ESLint 9 (flat config).
 - Updated the Docker build, the GitHub Actions workflows, the dev container and the documentation toolchain.
+- The container image is built on Chainguard images: `cgr.dev/chainguard/node` and
+  `cgr.dev/chainguard/go` for the two build stages and `cgr.dev/chainguard/static` for the
+  runtime, in place of `gcr.io/distroless/static`. With `-trimpath -ldflags "-s -w"` the
+  image goes from 29.5 MB to 19.8 MB.
+- 32-bit arm images (`linux/arm`) are no longer published, because the Chainguard base
+  images are amd64 and arm64 only. 64-bit Raspberry Pi OS is covered by `linux/arm64`.
 - `cmd/mock` now takes `-server`, `-search-results` and `-book-result` flags instead of hard coding them, and `task dev:irc-stop` removes the development IRC server.
 - The build script has been removed in favour of `task release:build`, which the release workflow already used.
 
