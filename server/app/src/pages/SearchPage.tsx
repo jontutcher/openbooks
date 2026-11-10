@@ -10,7 +10,7 @@ import {
   useMantineColorScheme
 } from "@mantine/core";
 import { MagnifyingGlass, Sidebar, Warning } from "@phosphor-icons/react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import image from "../assets/reading.svg";
 import BookTable from "../components/tables/BookTable";
 import ErrorTable from "../components/tables/ErrorTable";
@@ -31,17 +31,15 @@ export default function SearchPage() {
   const { colorScheme } = useMantineColorScheme();
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [showErrors, setShowErrors] = useState(false);
+  // Holds the timestamp of the history item whose parse errors are shown, so
+  // that selecting a different item implicitly goes back to the results.
+  const [errorsShownFor, setErrorsShownFor] = useState<number | null>(null);
 
   const hasErrors = (activeItem?.errors ?? []).length > 0;
-  const errorMode = showErrors && !!activeItem;
+  const errorMode = !!activeItem && errorsShownFor === activeItem.timestamp;
   const validInput = errorMode
     ? searchQuery.startsWith("!")
     : searchQuery !== "";
-
-  useEffect(() => {
-    setShowErrors(false);
-  }, [activeItem]);
 
   const searchHandler = (event: FormEvent) => {
     event.preventDefault();
@@ -111,7 +109,11 @@ export default function SearchPage() {
           {...conditionalAttribute("error-mode", errorMode)}
           className={classes.errorToggle}
           variant={errorMode ? "filled" : "subtle"}
-          onClick={() => setShowErrors((show) => !show)}
+          onClick={() =>
+            setErrorsShownFor(
+              errorMode ? null : (activeItem?.timestamp ?? null)
+            )
+          }
           leftSection={<Warning size={18} />}
           size="compact-xs">
           {activeItem?.errors?.length} Parsing{" "}

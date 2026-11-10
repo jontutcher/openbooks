@@ -9,8 +9,9 @@ import { DataTableColumnHeader } from "./DataTable/ColumnHeader";
 import DataTable from "./DataTable/DataTable";
 import ToolbarFacetFilter from "./DataTable/ToolbarFacetFilter";
 import { ServerFacetEntry, StandardFacetEntry } from "./Facets";
+import { DataTableFeatures } from "./DataTable/features";
 
-const columnHelper = createColumnHelper<BookDetail>();
+const columnHelper = createColumnHelper<DataTableFeatures, BookDetail>();
 
 interface BookTableProps {
   books: BookDetail[];
@@ -23,86 +24,89 @@ export default function BookTable({ books }: BookTableProps) {
   });
 
   const columns = useMemo(
-    () => [
-      columnHelper.accessor("server", {
-        header: (props) => (
-          <DataTableColumnHeader column={props.column} title="Server" />
-        ),
-        cell: (props) => {
-          const online = servers && servers[props.getValue()];
-          return (
-            <Tooltip position="top-start" label={online ? "Online" : "Offline"}>
-              <Indicator
-                zIndex={0}
-                position="middle-start"
-                offset={-16}
-                size={6}
-                color={online ? "green.6" : "gray"}>
-                <p>{props.getValue()}</p>
-              </Indicator>
+    () =>
+      columnHelper.columns([
+        columnHelper.accessor("server", {
+          header: (props) => (
+            <DataTableColumnHeader column={props.column} title="Server" />
+          ),
+          cell: (props) => {
+            const online = servers && servers[props.getValue()];
+            return (
+              <Tooltip
+                position="top-start"
+                label={online ? "Online" : "Offline"}>
+                <Indicator
+                  zIndex={0}
+                  position="middle-start"
+                  offset={-16}
+                  size={6}
+                  color={online ? "green.6" : "gray"}>
+                  <p>{props.getValue()}</p>
+                </Indicator>
+              </Tooltip>
+            );
+          },
+          size: 100,
+          enableGlobalFilter: false,
+          filterFn: "arrHas"
+        }),
+        columnHelper.accessor("author", {
+          header: (props) => (
+            <DataTableColumnHeader column={props.column} title="Author" />
+          ),
+          cell: (props) => (
+            <Tooltip label={props.getValue()} position="bottom">
+              <p>{props.getValue()}</p>
             </Tooltip>
-          );
-        },
-        size: 100,
-        enableGlobalFilter: false,
-        filterFn: "arrIncludesSome"
-      }),
-      columnHelper.accessor("author", {
-        header: (props) => (
-          <DataTableColumnHeader column={props.column} title="Author" />
-        ),
-        cell: (props) => (
-          <Tooltip label={props.getValue()} position="bottom">
-            <p>{props.getValue()}</p>
-          </Tooltip>
-        ),
-        size: 200
-      }),
-      columnHelper.accessor("title", {
-        header: (props) => (
-          <DataTableColumnHeader column={props.column} title="Title" />
-        ),
-        cell: (props) => (
-          <Tooltip label={props.getValue()} position="bottom-start">
-            <Text fz={12} fw="normal" c="dark">
-              {props.getValue()}
-            </Text>
-          </Tooltip>
-        )
-      }),
-      columnHelper.accessor("format", {
-        header: (props) => (
-          <DataTableColumnHeader column={props.column} title="Format" />
-        ),
-        size: 100,
-        filterFn: "arrIncludesSome",
-        enableGlobalFilter: false
-      }),
-      columnHelper.accessor("size", {
-        header: (props) => (
-          <DataTableColumnHeader column={props.column} title="Size" />
-        ),
-        size: 100,
-        enableGlobalFilter: false
-      }),
-      columnHelper.accessor("full", {
-        header: (props) => (
-          <DataTableColumnHeader column={props.column} title="Download" />
-        ),
-        size: 150,
-        enableGlobalFilter: false,
-        enableSorting: false,
-        enableHiding: false,
-        cell: (props) => (
-          <DownloadButton book={props.getValue()}></DownloadButton>
-        )
-      })
-    ],
+          ),
+          size: 200
+        }),
+        columnHelper.accessor("title", {
+          header: (props) => (
+            <DataTableColumnHeader column={props.column} title="Title" />
+          ),
+          cell: (props) => (
+            <Tooltip label={props.getValue()} position="bottom-start">
+              <Text fz={12} fw="normal" c="dark">
+                {props.getValue()}
+              </Text>
+            </Tooltip>
+          )
+        }),
+        columnHelper.accessor("format", {
+          header: (props) => (
+            <DataTableColumnHeader column={props.column} title="Format" />
+          ),
+          size: 100,
+          filterFn: "arrHas",
+          enableGlobalFilter: false
+        }),
+        columnHelper.accessor("size", {
+          header: (props) => (
+            <DataTableColumnHeader column={props.column} title="Size" />
+          ),
+          size: 100,
+          enableGlobalFilter: false
+        }),
+        columnHelper.accessor("full", {
+          header: (props) => (
+            <DataTableColumnHeader column={props.column} title="Download" />
+          ),
+          size: 150,
+          enableGlobalFilter: false,
+          enableSorting: false,
+          enableHiding: false,
+          cell: (props) => (
+            <DownloadButton book={props.getValue()}></DownloadButton>
+          )
+        })
+      ]),
     [servers]
   );
 
   const facetFilters = useCallback(
-    (table: Table<BookDetail>) => [
+    (table: Table<DataTableFeatures, BookDetail>) => [
       <ToolbarFacetFilter
         key="server"
         placeholder="Server"

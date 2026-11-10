@@ -48,7 +48,9 @@ export default function Library() {
 
   return (
     <Stack gap="xs" ref={parent}>
-      {data?.map((book) => <LibraryCard key={book.name} book={book} />)}
+      {data?.map((book) => (
+        <LibraryCard key={book.name} book={book} />
+      ))}
     </Stack>
   );
 }

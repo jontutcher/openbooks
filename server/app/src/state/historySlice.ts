@@ -19,7 +19,7 @@ export interface HistoryState {
 const loadState = (): HistoryItem[] => {
   try {
     return JSON.parse(localStorage.getItem("history")!) ?? [];
-  } catch (err) {
+  } catch {
     return [];
   }
 };
@@ -27,7 +27,7 @@ const loadState = (): HistoryItem[] => {
 const loadActiveState = (): number | undefined => {
   try {
     return JSON.parse(localStorage.getItem("active")!);
-  } catch (err) {
+  } catch {
     return undefined;
   }
 };

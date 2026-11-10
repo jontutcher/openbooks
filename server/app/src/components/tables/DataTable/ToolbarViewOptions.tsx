@@ -1,13 +1,13 @@
-import { Table } from "@tanstack/react-table";
+import { RowData, Table } from "@tanstack/react-table";
+import { DataTableFeatures } from "./features";
 import { Button, Menu, useMantineColorScheme } from "@mantine/core";
-import React from "react";
 import { Check, Sliders } from "@phosphor-icons/react";
 
-interface ToolbarViewOptionsProps<TData> {
-  table: Table<TData>;
+interface ToolbarViewOptionsProps<TData extends RowData> {
+  table: Table<DataTableFeatures, TData>;
 }
 
-export function ToolbarViewOptions<TData>({
+export function ToolbarViewOptions<TData extends RowData>({
   table
 }: ToolbarViewOptionsProps<TData>) {
   const { colorScheme } = useMantineColorScheme();
@@ -20,7 +20,7 @@ export function ToolbarViewOptions<TData>({
     );
 
   if (hideableColumns.length === 0) {
-    return;
+    return null;
   }
 
   return (

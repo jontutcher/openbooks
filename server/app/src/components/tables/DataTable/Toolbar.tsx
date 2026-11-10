@@ -1,17 +1,18 @@
-import { Table } from "@tanstack/react-table";
+import { RowData, Table } from "@tanstack/react-table";
+import { DataTableFeatures } from "./features";
 import { Button, Group, TextInput } from "@mantine/core";
 import { X } from "@phosphor-icons/react";
 import React from "react";
 import { ToolbarViewOptions } from "./ToolbarViewOptions";
 
-interface ToolbarProps<TData> {
-  table: Table<TData>;
+interface ToolbarProps<TData extends RowData> {
+  table: Table<DataTableFeatures, TData>;
   searchQuery: string;
   setSearchQuery: (searchQuery: string) => void;
-  facetFilters?: (table: Table<TData>) => React.ReactNode[];
+  facetFilters?: (table: Table<DataTableFeatures, TData>) => React.ReactNode[];
 }
 
-export default function Toolbar<TData>({
+export default function Toolbar<TData extends RowData>({
   table,
   searchQuery,
   setSearchQuery,

@@ -1,4 +1,5 @@
-import { Column } from "@tanstack/react-table";
+import { Column, RowData } from "@tanstack/react-table";
+import { DataTableFeatures } from "./features";
 import { Button, Menu, Text } from "@mantine/core";
 import {
   CaretUpDown,
@@ -8,14 +9,16 @@ import {
 } from "@phosphor-icons/react";
 import React from "react";
 
-interface DataTableColumnHeaderProps<TData, TValue>
-  extends React.HTMLAttributes<HTMLDivElement> {
-  column: Column<TData, TValue>;
+interface DataTableColumnHeaderProps<
+  TData extends RowData,
+  TValue
+> extends React.HTMLAttributes<HTMLDivElement> {
+  column: Column<DataTableFeatures, TData, TValue>;
   title: string;
   icon?: React.ReactNode;
 }
 
-export function DataTableColumnHeader<TData, TValue>({
+export function DataTableColumnHeader<TData extends RowData, TValue>({
   column,
   title,
   icon

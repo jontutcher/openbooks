@@ -1,4 +1,5 @@
 .listEntry {
+    width: 100%;
     height: 30px;
     position: relative;
     display: flex;

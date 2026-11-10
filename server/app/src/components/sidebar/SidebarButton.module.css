@@ -21,6 +21,14 @@
 .label {
     padding-left: var(--mantine-spacing-sm);
     width: 100%;
+    /* Lets the label, not the badge beside it, absorb the overflow. */
+    min-width: 0;
     text-align: start;
     font-size: var(--mantine-font-size-sm);
+}
+
+/* Mantine 9 lets button sections shrink, which truncated the result-count and
+   date badges ("26 RESULTS" became "26 R..."). */
+.section {
+    flex-shrink: 0;
 }

@@ -5,17 +5,18 @@ import {
 } from "@mantine/hooks";
 import { ActionIcon, Popover, Text } from "@mantine/core";
 import { createColumnHelper, Table } from "@tanstack/react-table";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { ParseError } from "../../state/messages";
 import DataTable from "./DataTable/DataTable";
 import { DataTableColumnHeader } from "./DataTable/ColumnHeader";
 import ToolbarFacetFilter from "./DataTable/ToolbarFacetFilter";
 import { StandardFacetEntry } from "./Facets";
 import { Info } from "@phosphor-icons/react";
+import { DataTableFeatures } from "./DataTable/features";
 
-const columnHelper = createColumnHelper<ParseError>();
+const columnHelper = createColumnHelper<DataTableFeatures, ParseError>();
 
-const columns = [
+const columns = columnHelper.columns([
   columnHelper.accessor("line", {
     header: (props) => (
       <DataTableColumnHeader column={props.column} title="Line" />
@@ -28,10 +29,10 @@ const columns = [
       <DataTableColumnHeader column={props.column} title="Error" />
     ),
     size: 300,
-    filterFn: "arrIncludesSome",
+    filterFn: "arrHas",
     enableHiding: false
   })
-];
+]);
 
 interface ErrorTableProps {
   errors: ParseError[];
@@ -50,7 +51,7 @@ export default function ErrorTable({
 
   const [opened, { close, open }] = useDisclosure(false);
 
-  const facetFilters = (table: Table<ParseError>) => [
+  const facetFilters = (table: Table<DataTableFeatures, ParseError>) => [
     <ToolbarFacetFilter
       key="error"
       placeholder="Error"

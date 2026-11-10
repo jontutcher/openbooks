@@ -65,6 +65,7 @@ function HistoryCard({ activeTS, item, dispatch }: Props) {
             classNames={{
               root: classes.root,
               inner: classes.inner,
+              section: classes.section,
               label: classes.label
             }}
             {...conditionalAttribute("active", isActive)}

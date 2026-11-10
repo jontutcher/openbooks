@@ -11,19 +11,19 @@ import {
   TextInput,
   useMantineColorScheme
 } from "@mantine/core";
-import { Column } from "@tanstack/react-table";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { Column, RowData } from "@tanstack/react-table";
+import { DataTableFeatures } from "./features";
 import { MagnifyingGlass, PlusCircle } from "@phosphor-icons/react";
-import { CSSProperties, useRef, useState } from "react";
+import { useState } from "react";
 import classes from "./ToolbarFacetFilter.module.css";
 
 const stringContains = (first: string, second: string): boolean => {
   return first.toLowerCase().includes(second.toLowerCase());
 };
 
-interface FacetFilterProps<TData> {
+interface FacetFilterProps<TData extends RowData> {
   placeholder: string;
-  column: Column<TData, unknown>;
+  column: Column<DataTableFeatures, TData, unknown>;
   Entry: React.FC<FacetEntryProps>;
 }
 
@@ -31,10 +31,9 @@ export interface FacetEntryProps {
   entry: string;
   selected: boolean;
   onClick: (entry: string) => void;
-  style: CSSProperties;
 }
 
-export default function ToolbarFacetFilter<TData>({
+export default function ToolbarFacetFilter<TData extends RowData>({
   placeholder,
   column,
   Entry
@@ -44,15 +43,6 @@ export default function ToolbarFacetFilter<TData>({
 
   const options = Array.from(column.getFacetedUniqueValues().keys());
   const filteredOptions = options.filter((x) => stringContains(x, filter));
-
-  const listRef = useRef<HTMLDivElement>(null);
-
-  const rowVirtualizer = useVirtualizer({
-    count: filteredOptions.length,
-    getScrollElement: () => listRef.current,
-    estimateSize: () => 30,
-    overscan: 10
-  });
 
   const filterValue = (column.getFilterValue() ?? []) as string[];
 
@@ -64,8 +54,8 @@ export default function ToolbarFacetFilter<TData>({
         ? "blue.2"
         : "dark.0"
       : filterValue.length > 0
-      ? "blue.4"
-      : "gray.7";
+        ? "blue.4"
+        : "gray.7";
 
   return (
     <Popover
@@ -153,43 +143,28 @@ export default function ToolbarFacetFilter<TData>({
           }
         />
 
-        <div ref={listRef} className={classes.container}>
-          <div
-            style={{
-              height: `${rowVirtualizer.getTotalSize()}px`,
-              width: "100%",
-              position: "relative"
-            }}>
-            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-              const selected = filterValue.includes(
-                filteredOptions[virtualRow.index]
-              );
-              return (
-                <Entry
-                  key={virtualRow.index}
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    height: virtualRow.size,
-                    transform: `translateY(${virtualRow.start}px)`
-                  }}
-                  entry={filteredOptions[virtualRow.index]}
-                  selected={selected}
-                  onClick={(entry) =>
-                    selected
-                      ? column.setFilterValue(
-                          filterValue.filter(
-                            (x) => x !== filteredOptions[virtualRow.index]
-                          )
-                        )
-                      : column.setFilterValue([...filterValue, entry])
-                  }
-                />
-              );
-            })}
-          </div>
+        <div className={classes.container}>
+          {/* These lists hold at most a few dozen facet values, and the
+              popover's scroll element does not exist until it opens, which
+              @tanstack/react-virtual cannot measure. Rendering them directly
+              costs nothing and keeps the list visible. */}
+          {filteredOptions.map((option) => {
+            const selected = filterValue.includes(option);
+            return (
+              <Entry
+                key={option}
+                entry={option}
+                selected={selected}
+                onClick={(entry) =>
+                  selected
+                    ? column.setFilterValue(
+                        filterValue.filter((x) => x !== option)
+                      )
+                    : column.setFilterValue([...filterValue, entry])
+                }
+              />
+            );
+          })}
 
           {filteredOptions.length === 0 && (
             <Center py="xs">

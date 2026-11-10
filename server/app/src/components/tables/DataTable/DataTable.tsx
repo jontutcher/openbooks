@@ -2,72 +2,46 @@ import { ScrollArea, Table, Text } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
 import {
   ColumnDef,
-  FilterFn,
   flexRender,
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getSortedRowModel,
   Row,
+  RowData,
   Table as TableType,
-  useReactTable
+  useTable
 } from "@tanstack/react-table";
 
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ReactNode, useRef, useState } from "react";
 import { BookDetail } from "../../../state/messages";
-import Toolbar from "./Toolbar";
-import { RankingInfo, rankItem } from "@tanstack/match-sorter-utils";
-import classes from "./DataTable.module.css";
 import { conditionalAttribute } from "../../../utils/attribute-helper";
+import classes from "./DataTable.module.css";
+import { DataTableFeatures, features } from "./features";
+import Toolbar from "./Toolbar";
 
-declare module "@tanstack/table-core" {
-  interface FilterFns {
-    fuzzy: FilterFn<unknown>;
-  }
-  interface FilterMeta {
-    itemRank: RankingInfo;
-  }
-}
-
-const fuzzyFilter: FilterFn<unknown> = (row, columnId, value, addMeta) => {
-  // Rank the item
-  const itemRank = rankItem(row.getValue(columnId), value);
-
-  // Store the itemRank info
-  addMeta({
-    itemRank
-  });
-
-  // Return if the item should be filtered in/out
-  return itemRank.passed;
-};
-
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
+interface DataTableProps<TData extends RowData> {
+  // ColumnDef is invariant in its value type and every column carries its
+  // own, so this is the array type that columnHelper.columns() produces.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  columns: ColumnDef<DataTableFeatures, TData, any>[];
   data: TData[];
-  facetFilters?: (table: TableType<TData>) => ReactNode[];
+  facetFilters?: (table: TableType<DataTableFeatures, TData>) => ReactNode[];
 }
 
-export default function DataTable<TData, TValue>({
+export default function DataTable<TData extends RowData>({
   columns,
   data,
   facetFilters
-}: DataTableProps<TData, TValue>) {
+}: DataTableProps<TData>) {
   // Table virtualization stuff
-  const virtualizedRef = useRef(null);
+  const virtualizedRef = useRef<HTMLDivElement>(null);
 
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [debouncedSearchQuery] = useDebouncedValue<string>(searchQuery, 250);
 
-  const table = useReactTable({
+  const table = useTable({
+    features,
     data: data,
     columns: columns,
     enableMultiSort: true,
-    filterFns: {
-      fuzzy: fuzzyFilter
-    },
     state: {
       globalFilter: debouncedSearchQuery
     },
@@ -76,16 +50,11 @@ export default function DataTable<TData, TValue>({
       size: Number.MAX_SAFE_INTEGER,
       maxSize: Number.MAX_SAFE_INTEGER
     },
-    onGlobalFilterChange: (value) => setSearchQuery(value ?? ""),
+    onGlobalFilterChange: (value) => setSearchQuery((value as string) ?? ""),
     globalFilterFn: "fuzzy",
     enableFilters: true,
     enableGlobalFilter: true,
-    columnResizeMode: "onChange",
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    getSortedRowModel: getSortedRowModel()
+    columnResizeMode: "onChange"
   });
 
   const { rows: tableRows } = table.getRowModel();
@@ -164,9 +133,10 @@ export default function DataTable<TData, TValue>({
               </Table.Tr>
             )}
             {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-              const row = tableRows[
-                virtualRow.index
-              ] as unknown as Row<BookDetail>;
+              const row = tableRows[virtualRow.index] as unknown as Row<
+                DataTableFeatures,
+                BookDetail
+              >;
               return (
                 <Table.Tr key={row.id} style={{ height: 50 }}>
                   {row.getVisibleCells().map((cell) => {

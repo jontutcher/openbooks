@@ -7,7 +7,20 @@ import {
 } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 import { RootState, useAppSelector } from "./state/store";
-// import "@mantine/core/styles.css";
+// Only the styles for the components actually rendered here are imported.
+// The full bundle ("@mantine/core/styles.css") is about four times the size,
+// but this list has to be kept in step with the components in use — a
+// component whose stylesheet is missing renders unstyled.
+// These three are the non-component stylesheets, and all of them are needed:
+//   baseline.css              document reset (box-sizing, body font/background)
+//   default-css-variables.css the default --mantine-* custom properties
+//   global.css                shared helper classes
+// MantineProvider only injects the variables that this theme *overrides* (it
+// calls removeDefaultVariables on the assumption that the defaults are already
+// loaded), so leaving default-css-variables.css out leaves almost every
+// var(--mantine-*) undefined and the whole page unstyled.
+import "@mantine/core/styles/baseline.css";
+import "@mantine/core/styles/default-css-variables.css";
 import "@mantine/core/styles/global.css";
 
 import "@mantine/core/styles/UnstyledButton.css";
@@ -17,6 +30,7 @@ import "@mantine/core/styles/ActionIcon.css";
 import "@mantine/core/styles/AppShell.css";
 import "@mantine/core/styles/Badge.css";
 import "@mantine/core/styles/Center.css";
+import "@mantine/core/styles/CloseButton.css";
 import "@mantine/core/styles/Indicator.css";
 import "@mantine/core/styles/Tooltip.css";
 import "@mantine/core/styles/Stack.css";
@@ -27,12 +41,12 @@ import "@mantine/core/styles/Menu.css";
 import "@mantine/core/styles/Group.css";
 import "@mantine/core/styles/Notification.css";
 import "@mantine/core/styles/ScrollArea.css";
-import "@mantine/core/styles/TypographyStylesProvider.css";
 import "@mantine/core/styles/Table.css";
 import "@mantine/core/styles/Loader.css";
 import "@mantine/core/styles/SegmentedControl.css";
 import "@mantine/core/styles/VisuallyHidden.css";
 import "@mantine/core/styles/Text.css";
+import "@mantine/core/styles/Title.css";
 import "@mantine/core/styles/Divider.css";
 
 import "@mantine/notifications/styles.css";

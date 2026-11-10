@@ -9,8 +9,7 @@ import { conditionalAttribute } from "../../utils/attribute-helper";
 export function ServerFacetEntry({
   entry,
   onClick,
-  selected,
-  style
+  selected
 }: FacetEntryProps) {
   const { data: servers } = useGetServersQuery();
   const serverOnline = servers && servers[entry];
@@ -21,7 +20,6 @@ export function ServerFacetEntry({
       tabIndex={0}
       {...conditionalAttribute("selected", selected)}
       className={classes.listEntry}
-      style={style}
       onClick={() => onClick(entry)}>
       <div className={cx({ [classes.indicator]: selected })}></div>
 
@@ -41,8 +39,7 @@ export function ServerFacetEntry({
 export function StandardFacetEntry({
   entry,
   onClick,
-  selected,
-  style
+  selected
 }: FacetEntryProps): React.ReactNode {
   return (
     <Button
@@ -50,7 +47,6 @@ export function StandardFacetEntry({
       tabIndex={0}
       {...conditionalAttribute("selected", selected)}
       className={classes.listEntry}
-      style={style}
       onClick={() => onClick(entry)}>
       <div className={cx({ [classes.indicator]: selected })}></div>
 
