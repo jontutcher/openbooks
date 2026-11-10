@@ -3,6 +3,12 @@
 version: "3"
 
 tasks:
+  init:
+    desc: Install Go and Node.JS dependencies.
+    cmds:
+      - go mod download
+      - task: npm-install
+
   go-update:
     desc: Update Golang dependencies.
     cmds:
@@ -26,12 +32,17 @@ tasks:
       - package-lock.json
 
   irc:
-    desc: Start IRC Server for Development
+    desc: Start the IRC server the mock bot and OpenBooks connect to.
     cmds:
       - docker run --name ergo -d -p 6667:6667 -p 6697:6697 ghcr.io/ergochat/ergo:stable
 
+  irc-stop:
+    desc: Stop and remove the development IRC server.
+    cmds:
+      - docker rm -f ergo
+
   mock:
-    desc: Start Mock Server for Development
+    desc: Start the mock search / download bot. Requires "task dev:irc".
     dir: cmd/mock
     cmds:
       - go run .

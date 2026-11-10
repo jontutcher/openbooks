@@ -19,10 +19,8 @@
     "vscode": {
       "extensions": [
         "golang.go",
-        "heybourn.headwind",
         "esbenp.prettier-vscode",
-        "bradlc.vscode-tailwindcss",
-        "ms-vscode.makefile-tools",
+        "dbaeumer.vscode-eslint",
         "redhat.vscode-yaml"
       ]
     }

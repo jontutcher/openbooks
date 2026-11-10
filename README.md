@@ -50,33 +50,39 @@ Double clicking the executable will open the UI in your browser. In the future i
 
 ## Development
 
+OpenBooks uses [Task](https://taskfile.dev/) as its build system. `task --list-all`
+shows everything that is available, and the full guide lives in the
+[developer documentation](https://evan-buss.github.io/openbooks/developers/).
+
 ### Install the dependencies
 
-- `go get`
-- `cd server/app && npm install`
-- `cd ../..`
-- `go run main.go`
+- `task dev:init`
 
-### Build the React SPA and compile binaries for multiple platforms.
+### Run against the mock IRC server
 
-- Run `./build.sh`
-- This will install npm packages, build the React app, and compile the executable.
+The mock server lets you debug requests and responses against simplified IRC / DCC
+servers that mimic IRC Highway, rather than hitting the real network. Run each of
+these in its own terminal:
 
-### Build the go binary (if you haven't changed the frontend)
+```bash
+task dev:irc     # a local ergo IRC server in Docker on port 6667
+task dev:mock    # the mock search / download bot
+task dev:server  # OpenBooks in server mode, pointed at the mock
+task dev:client  # optional: the React client with hot reload
+```
 
-- `go build`
+`task dev:irc-stop` removes the IRC container again. Use `task dev:cli` in place of
+`task dev:server` to work on the terminal interface.
 
-### Mock Development Server
+### Build the React SPA and compile binaries for multiple platforms
 
-- The mock server allows you to debug responses and requests to simplified IRC / DCC
-  servers that mimic the responses received from IRC Highway.
-- ```bash
-  cd cmd/mock_server
-  go run .
-  # Another Terminal
-  cd cmd/openbooks
-  go run . server --server localhost --log
-  ```
+- `task release:build`
+- This installs the npm packages, builds the React app, and compiles the executables
+  into `build/`.
+
+### Build just the Go binary (if you haven't changed the frontend)
+
+- `cd cmd/openbooks && go build`
 
 ### Desktop App
 Compile OpenBooks with experimental webview support:

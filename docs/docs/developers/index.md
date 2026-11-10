@@ -9,9 +9,13 @@ Otherwise follow the install instructions on the Task website. The rest of the g
 
 : Installs NPM and Go dependencies.
 
+`task dev:irc`
+
+: Starts a local [ergo](https://ergo.chat/) IRC server in Docker on port 6667. Stop it again with `task dev:irc-stop`.
+
 `task dev:mock`
 
-: Starts a mock IRC / DCC server that mimics basic requests / responses from IRC Highway. 95% of the time you should be connecting to the mock server to avoid making requests to the IRC Highway's server. See [IRC notes](../irc-notes.md).
+: Starts a mock search / download bot that joins that server and mimics basic requests / responses from IRC Highway. 95% of the time you should be connecting to the mock server to avoid making requests to the IRC Highway's server. See [IRC notes](../irc-notes.md).
 
 ## Server Mode Development
 
