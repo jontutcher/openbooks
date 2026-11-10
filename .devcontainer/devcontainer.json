@@ -1,6 +1,6 @@
 {
   "name": "Ubuntu",
-  "image": "mcr.microsoft.com/devcontainers/base:0-jammy",
+  "image": "mcr.microsoft.com/devcontainers/base:3-noble",
 
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   // "forwardPorts": [],

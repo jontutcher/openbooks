@@ -1,22 +1,26 @@
-FROM node:18 as web
+FROM node:24-alpine AS web
 WORKDIR /web
-COPY . .
-WORKDIR /web/server/app/
-RUN npm install
+# The manifests are copied on their own so that the install layer is reused
+# whenever only application source has changed.
+COPY server/app/package.json server/app/package-lock.json ./
+RUN npm ci
+COPY server/app/ ./
 RUN npm run build
 
-FROM golang as build
+FROM golang:1.26-alpine AS build
 WORKDIR /go/src/
+# Same idea: the module cache only has to be rebuilt when go.mod/go.sum change.
+COPY go.mod go.sum ./
+RUN go mod download
 COPY . .
-COPY --from=web /web/ .
+# Only the built client is needed; node_modules must not come across.
+COPY --from=web /web/dist ./server/app/dist
 
 ENV CGO_ENABLED=0
-RUN go get -d -v ./...
-RUN go install -v ./...
 WORKDIR /go/src/cmd/openbooks/
 RUN go build
 
-FROM gcr.io/distroless/static as app
+FROM gcr.io/distroless/static AS app
 WORKDIR /app
 COPY --from=build /go/src/cmd/openbooks/openbooks .
 
