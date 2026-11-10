@@ -8,34 +8,36 @@ import (
 )
 
 func TestSearchParser(t *testing.T) {
-	reader := strings.NewReader(sampleData)
-	results, errors := ParseSearch(reader)
+	results, parseErrors := ParseSearchV2(strings.NewReader(sampleData))
 
-	if len(errors) > 1 {
-		t.Errorf("Expected 1 errors but got %d\n", len(errors))
-		for _, parseError := range errors {
-			t.Log(parseError)
+	// Every line in the sample data is a genuine search result, so none of them
+	// should be dropped. Counting them here rather than hard coding a total
+	// keeps the expectation honest when a new sample line is added.
+	wanted := 0
+	for _, line := range strings.Split(sampleData, "\n") {
+		if strings.HasPrefix(line, "!") {
+			wanted++
 		}
 	}
 
-	if len(results) != 57 {
-		t.Errorf("Expected 57 results but got %d\n", len(results))
-	}
+	assert.Empty(t, parseErrors, "no sample line should fail to parse")
+	assert.Len(t, results, wanted)
 }
 
-func TestSearchParserV2(t *testing.T) {
-	reader := strings.NewReader(sampleData)
-	results, errors := ParseSearchV2(reader)
-
-	if len(errors) != 1 {
-		t.Errorf("Expected 1 errors but got %d\n", len(errors))
-		for _, parseError := range errors {
-			t.Log(parseError)
-		}
+func TestParseErrors(t *testing.T) {
+	cases := []struct {
+		reason string
+		line   string
+	}{
+		{"empty line", ""},
+		{"does not start with '!'", "Oatmeal F Scott Fitzgerald - The Great Gatsby.epub"},
+		{"no server name", "!Oatmeal"},
+		{"no recognised file extension", "!Oatmeal F Scott Fitzgerald - The Great Gatsby.xyz  ::INFO:: 204.55KB"},
 	}
 
-	if len(results) != 57 {
-		t.Errorf("Expected 57 results but got %d\n", len(results))
+	for _, input := range cases {
+		_, err := parseLineV2(input.line)
+		assert.Error(t, err, input.reason)
 	}
 }
 
@@ -103,6 +105,66 @@ func TestSpecialCases(t *testing.T) {
 				Format: "zip",
 				Size:   "445.09MB",
 				Full:   "!FWServer %DE7B9E7F6F34% Brown, Dan - Robert Langdon 04 - Inferno - Audiobook.zip",
+			},
+		},
+		{
+			"file size separated from its unit",
+			"!phoomphy Fitzgerald, F. Scott - The Great Gatsby (1925).epub     ::INFO:: 205.10 KiB",
+			BookDetail{
+				Server: "phoomphy",
+				Author: "Fitzgerald, F. Scott",
+				Title:  "The Great Gatsby (1925)",
+				Format: "epub",
+				Size:   "205.10 KiB",
+				Full:   "!phoomphy Fitzgerald, F. Scott - The Great Gatsby (1925).epub",
+			},
+		},
+		{
+			"no author in the file name",
+			"!peapod The Great Gatsby.pdf  ::INFO:: 254.73KB",
+			BookDetail{
+				Server: "peapod",
+				Author: "",
+				Title:  "The Great Gatsby",
+				Format: "pdf",
+				Size:   "254.73KB",
+				Full:   "!peapod The Great Gatsby.pdf",
+			},
+		},
+		{
+			"no author, underscore separated name, ebook inside an archive",
+			"!DeathCookie Travis_Bagwell_Tarot_03_Inferno.epub.rar  ::INFO:: 579.5KB",
+			BookDetail{
+				Server: "DeathCookie",
+				Author: "",
+				Title:  "Travis_Bagwell_Tarot_03_Inferno",
+				Format: "epub",
+				Size:   "579.5KB",
+				Full:   "!DeathCookie Travis_Bagwell_Tarot_03_Inferno.epub.rar",
+			},
+		},
+		{
+			"no author, bracketed publisher and parenthesised notes",
+			"!dragnbreaker Inferno! 030 [Black Library] (2002) (U.K.) (CBRed by Discovery-DCP).cbr  ::INFO:: 17.1MB",
+			BookDetail{
+				Server: "dragnbreaker",
+				Author: "",
+				Title:  "Inferno! 030 [Black Library] (2002) (U.K.) (CBRed by Discovery-DCP)",
+				Format: "cbr",
+				Size:   "17.1MB",
+				Full:   "!dragnbreaker Inferno! 030 [Black Library] (2002) (U.K.) (CBRed by Discovery-DCP).cbr",
+			},
+		},
+		{
+			"dashes with no surrounding spaces are not an author separator",
+			"!Horla Linda Howard -[Raintree 01]- Inferno.doc",
+			BookDetail{
+				Server: "Horla",
+				Author: "",
+				Title:  "Linda Howard -[Raintree 01]- Inferno",
+				Format: "doc",
+				Size:   "N/A",
+				Full:   "!Horla Linda Howard -[Raintree 01]- Inferno.doc",
 			},
 		},
 	}
