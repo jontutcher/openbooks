@@ -1,0 +1,73 @@
+# Builds the OpenBooks image and pushes it to this project's GitLab container
+# registry, where Flux image automation in k8s-home-v2 picks it up.
+#
+# THE CANONICAL REMOTE FOR THIS REPOSITORY IS GITHUB (github.com/jontutcher/
+# openbooks, a fork of evan-buss/openbooks). GitLab is a second push remote
+# used for building and deploying into the homelab; lint, vet and the Go tests
+# run in GitHub Actions (.github/workflows/test.yml).
+#
+# Tags, following docs/chainguard-migration.md "Custom builds" in k8s-home-v2:
+#   $CI_REGISTRY_IMAGE:<version>-<pipeline iid>   what the cluster tracks
+#   $CI_REGISTRY_IMAGE:<version>                  for humans
+#   $CI_REGISTRY_IMAGE:latest                     for humans
+# <version> is read out of cmd/openbooks/main.go, so the Go source stays the
+# single place it is defined. The cluster's ImagePolicy filters on the
+# suffixed form and treats the pipeline iid as a semver prerelease, so a
+# rebuild on an unchanged version still rolls out.
+#
+# No CI variables are needed. The registry push uses the job token, and the
+# Chainguard bases in the Dockerfile are the public cgr.dev/chainguard ones,
+# so there is no cgr.dev login (unlike k8s-home-v2's builds, which sit on the
+# private cgr.dev/jon.tutcher org).
+#
+# A weekly pipeline schedule on the default branch (Build > Pipeline
+# schedules) rebuilds the image so Chainguard's base-image fixes land without
+# a code change.
+
+stages:
+  - build
+
+workflow:
+  rules:
+    # A merge request would otherwise build the same commit twice.
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - if: $CI_COMMIT_BRANCH || $CI_COMMIT_TAG
+
+image:
+  stage: build
+  image: docker:29
+  services:
+    - docker:29-dind
+  variables:
+    DOCKER_TLS_CERTDIR: /certs
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" --password-stdin
+  script:
+    - VERSION=$(sed -n 's/^var version = "\([^"]*\)".*/\1/p' cmd/openbooks/main.go)
+    - test -n "$VERSION"
+    - echo "Building OpenBooks $VERSION (pipeline $CI_PIPELINE_IID)"
+    # The runner is amd64, like the cluster. --pull picks up the current
+    # Chainguard bases on every build, which is the point of the schedule.
+    - docker build --pull --platform linux/amd64
+        --build-arg "VERSION=$VERSION"
+        -t "$CI_REGISTRY_IMAGE:$VERSION-$CI_PIPELINE_IID"
+        .
+    # Nothing is pushed that fails the smoke test.
+    - sh .gitlab/smoke-test.sh "$CI_REGISTRY_IMAGE:$VERSION-$CI_PIPELINE_IID"
+    # Only the default branch publishes. A feature branch that pushed a
+    # <version>-<iid> tag would outrank every earlier build and the cluster's
+    # ImagePolicy would deploy it.
+    - |
+      if [ "$CI_COMMIT_BRANCH" != "$CI_DEFAULT_BRANCH" ]; then
+        echo "Not on $CI_DEFAULT_BRANCH, built and tested but not pushed."
+        exit 0
+      fi
+    - docker tag "$CI_REGISTRY_IMAGE:$VERSION-$CI_PIPELINE_IID" "$CI_REGISTRY_IMAGE:$VERSION"
+    - docker tag "$CI_REGISTRY_IMAGE:$VERSION-$CI_PIPELINE_IID" "$CI_REGISTRY_IMAGE:latest"
+    - docker push --all-tags "$CI_REGISTRY_IMAGE"
+    - echo "Published $CI_REGISTRY_IMAGE:$VERSION-$CI_PIPELINE_IID"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_COMMIT_BRANCH
