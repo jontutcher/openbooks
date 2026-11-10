@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/evan-buss/openbooks/core"
+	"github.com/evan-buss/openbooks/dcc"
 )
 
 func (s *server) NewIrcEventHandler() core.EventHandler {
@@ -25,9 +27,8 @@ func (s *server) NewIrcEventHandler() core.EventHandler {
 // searchResultHandler downloads from DCC server, parses data, and sends data to client
 func (s *server) searchResultHandler(downloadDir string) core.HandlerFunc {
 	return func(text string) {
-		extractedPath, err := core.DownloadExtractDCCString(filepath.Join(downloadDir, "books"), text, nil)
+		extractedPath, err := s.downloadDCC(filepath.Join(downloadDir, "books"), text, "search results")
 		if err != nil {
-			s.log.Println(err)
 			s.send <- newErrorResponse("Error when downloading search results.")
 			return
 		}
@@ -65,9 +66,8 @@ func (s *server) searchResultHandler(downloadDir string) core.HandlerFunc {
 // bookResultHandler downloads the book file and sends it over the websocket
 func (s *server) bookResultHandler(downloadDir string, disableBrowserDownloads bool) core.HandlerFunc {
 	return func(text string) {
-		extractedPath, err := core.DownloadExtractDCCString(filepath.Join(downloadDir, "books"), text, nil)
+		extractedPath, err := s.downloadDCC(filepath.Join(downloadDir, "books"), text, "book")
 		if err != nil {
-			s.log.Println(err)
 			s.send <- newErrorResponse("Error when downloading book.")
 			return
 		}
@@ -75,6 +75,34 @@ func (s *server) bookResultHandler(downloadDir string, disableBrowserDownloads b
 		s.log.Printf("Sending book entitled '%s'.\n", filepath.Base(extractedPath))
 		s.send <- newDownloadResponse(extractedPath, disableBrowserDownloads)
 	}
+}
+
+// downloadDCC performs a DCC transfer, logging the address it dials and how
+// the transfer ended.
+//
+// A DCC SEND names an address and a size chosen by whoever is sending, and
+// openbooks has to make the outbound connection. When a transfer fails or
+// stalls, that address and the byte count are what explain why, and they
+// appear nowhere else, so they are logged whether or not raw IRC logging is
+// enabled.
+func (s *server) downloadDCC(baseDir, dccString, what string) (string, error) {
+	if download, err := dcc.ParseString(dccString); err == nil {
+		s.log.Printf("Downloading %s: %q from %s:%d, %d bytes.\n",
+			what, download.Filename, download.IP, download.Port, download.Size)
+	} else {
+		s.log.Printf("Unable to parse the DCC SEND for %s, attempting it anyway: %v\n", what, err)
+	}
+
+	start := time.Now()
+
+	extractedPath, err := core.DownloadExtractDCCString(baseDir, dccString, nil)
+	if err != nil {
+		s.log.Printf("Download of %s failed after %s: %v\n", what, time.Since(start).Round(time.Millisecond), err)
+		return "", err
+	}
+
+	s.log.Printf("Download of %s completed in %s.\n", what, time.Since(start).Round(time.Millisecond))
+	return extractedPath, nil
 }
 
 // NoResults is called when the server returns that nothing was found for the query

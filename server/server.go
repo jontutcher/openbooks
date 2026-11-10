@@ -172,6 +172,33 @@ func (server *server) startEventForwarder(ctx context.Context) {
 	}
 }
 
+// rawIRCLogger returns a handler that records every raw line received from the
+// IRC server.
+//
+// Lines always go to the server's own log, which is stdout, because that is
+// the only place the operator of a container can be relied on to read them:
+// the download directory is a mounted volume and exec access into the pod is
+// not a given. Where the download directory is writable they are also written
+// to a file, which is what desktop and CLI users want.
+func (server *server) rawIRCLogger() core.HandlerFunc {
+	sinks := []func(string){
+		func(text string) { server.log.Printf("IRC: %s", text) },
+	}
+
+	logger, _, err := util.CreateLogFile(server.irc.Username, server.config.DownloadDir)
+	if err != nil {
+		server.log.Printf("Unable to create the IRC log file, logging raw IRC to stdout only: %v\n", err)
+	} else {
+		sinks = append(sinks, func(text string) { logger.Println(text) })
+	}
+
+	return func(text string) {
+		for _, sink := range sinks {
+			sink(text)
+		}
+	}
+}
+
 func (server *server) registerGracefulShutdown(cancel context.CancelFunc) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -220,11 +247,7 @@ func (server *server) connectIRC(ctx context.Context) {
 	handler := server.NewIrcEventHandler()
 
 	if server.config.Log {
-		logger, _, err := util.CreateLogFile(server.irc.Username, server.config.DownloadDir)
-		if err != nil {
-			server.log.Println(err)
-		}
-		handler[core.Message] = func(text string) { logger.Println(text) }
+		handler[core.Message] = server.rawIRCLogger()
 	}
 
 	go core.StartReader(ctx, server.irc, handler)
