@@ -34,7 +34,10 @@ workflow:
       when: never
     - if: $CI_COMMIT_BRANCH || $CI_COMMIT_TAG
 
-image:
+# Not named "image": at the top level that is GitLab's global image keyword,
+# not a job, and the whole file is rejected with "image name should be a
+# string".
+openbooks:
   stage: build
   image: docker:29
   services:
