@@ -29,7 +29,7 @@ func (i *Conn) Connect(address string, enableTLS bool) error {
 	var conn net.Conn
 	var err error
 	if enableTLS {
-		conn, err = tls.Dial("tcp", address, &tls.Config{InsecureSkipVerify: true})
+		conn, err = tls.Dial("tcp", address, tlsConfig())
 	} else {
 		conn, err = net.Dial("tcp", address)
 	}
@@ -46,6 +46,34 @@ func (i *Conn) Connect(address string, enableTLS bool) error {
 	i.Write([]byte(user))
 	i.Write([]byte(nick))
 	return nil
+}
+
+// tlsConfig is the TLS client configuration used for IRC connections.
+//
+// Certificate verification is off because IRCHighway presents a self-signed
+// certificate.
+//
+// The cipher list is the toolchain default plus TLS_RSA_WITH_AES_128_CBC_SHA256.
+// Go removed the RSA key exchange suites from its client defaults in 1.22 and
+// deleted the tlsrsakex GODEBUG that re-enabled them in 1.27, but several
+// irc.irchighway.net servers still run InspIRCd 2.0 and offer nothing except
+// TLS_RSA_WITH_AES_128_CBC_SHA256 and TLS_RSA_WITH_AES_256_CBC_SHA256 over
+// TLS 1.2. Go has never implemented the 256-bit one, so the 128-bit suite is
+// the only overlap available. irc.irchighway.net is a rotating pool with a
+// two minute TTL, so without this the connection fails with a bare EOF
+// whenever DNS happens to return one of those servers. CipherSuites is
+// ignored for TLS 1.3, so servers that support it still negotiate it.
+func tlsConfig() *tls.Config {
+	suites := make([]uint16, 0, len(tls.CipherSuites())+1)
+	for _, suite := range tls.CipherSuites() {
+		suites = append(suites, suite.ID)
+	}
+	suites = append(suites, tls.TLS_RSA_WITH_AES_128_CBC_SHA256)
+
+	return &tls.Config{
+		InsecureSkipVerify: true,
+		CipherSuites:       suites,
+	}
 }
 
 // Disconnect closes connection to the IRC server
